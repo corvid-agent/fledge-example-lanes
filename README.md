@@ -101,4 +101,4 @@ fledge lane import corvid-agent/fledge-example-lanes@v1.0.0
 
 ## Learn more
 
-- [fledge documentation](https://github.com/corvid-agent/fledge)
+- [fledge documentation](https://github.com/CorvidLabs/fledge)
