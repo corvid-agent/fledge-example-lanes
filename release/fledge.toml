@@ -1,0 +1,55 @@
+# Release Lane — test, version, changelog, and publish pipeline
+#
+# Run with: fledge lane run release
+# Preview:  fledge lane run release --dry-run
+
+[tasks.lint]
+run = "cargo clippy -- -D warnings"
+description = "Run clippy lints"
+
+[tasks.test]
+run = "cargo test"
+description = "Run the full test suite"
+
+[tasks.version]
+run = "fledge version bump"
+description = "Bump the project version"
+
+[tasks.changelog]
+run = "fledge changelog"
+description = "Generate changelog from git tags"
+
+[tasks.build]
+run = "cargo build --release"
+description = "Build the release binary"
+
+[tasks.publish]
+run = "cargo publish"
+description = "Publish crate to crates.io"
+
+[tasks.tag]
+run = "git tag -a v$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[0].version') -m 'Release'"
+description = "Create a git tag for the release"
+
+# Full release pipeline — validate, version, build, publish
+[lanes.release]
+description = "Full release pipeline"
+steps = [
+  { parallel = ["lint", "test"] },
+  "version",
+  "changelog",
+  "build",
+  "publish",
+  "tag",
+  { run = "git push --follow-tags" }
+]
+
+# Dry release — everything except publish and push
+[lanes.release-dry]
+description = "Dry release (build only, no publish)"
+steps = [
+  { parallel = ["lint", "test"] },
+  "version",
+  "changelog",
+  "build"
+]

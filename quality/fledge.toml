@@ -1,0 +1,58 @@
+# Quality Lane — lint, format, and audit pipeline
+#
+# Run with: fledge lane run quality
+# Preview:  fledge lane run quality --dry-run
+
+[tasks.lint]
+run = "cargo clippy -- -D warnings"
+description = "Run clippy lints with warnings as errors"
+
+[tasks.fmt-check]
+run = "cargo fmt --check"
+description = "Check code formatting"
+
+[tasks.fmt]
+run = "cargo fmt"
+description = "Auto-format code"
+
+[tasks.deps-audit]
+run = "cargo audit"
+description = "Audit dependencies for known vulnerabilities"
+
+[tasks.license-check]
+run = "cargo deny check licenses"
+description = "Check dependency licenses"
+
+[tasks.outdated]
+run = "cargo outdated -R"
+description = "List outdated dependencies"
+
+[tasks.doc-check]
+run = "cargo doc --no-deps 2>&1 | grep -c warning || true"
+description = "Check for documentation warnings"
+
+# Full quality gate — all checks, continue on failure to report everything
+[lanes.quality]
+description = "Full quality gate"
+fail_fast = false
+steps = [
+  { parallel = ["lint", "fmt-check"] },
+  { parallel = ["deps-audit", "license-check"] },
+  "outdated",
+  "doc-check"
+]
+
+# Quick lint — just formatting and clippy
+[lanes.lint]
+description = "Quick lint check"
+steps = [
+  { parallel = ["lint", "fmt-check"] }
+]
+
+# Fix — auto-format and then verify
+[lanes.fix]
+description = "Auto-fix formatting then verify"
+steps = [
+  "fmt",
+  "lint"
+]

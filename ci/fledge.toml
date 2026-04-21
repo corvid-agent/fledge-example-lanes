@@ -1,0 +1,34 @@
+# CI Lane — lint, test, and build pipeline
+#
+# Run with: fledge lane run ci
+# Preview:  fledge lane run ci --dry-run
+
+[tasks.lint]
+run = "cargo clippy -- -D warnings"
+description = "Run clippy lints with warnings as errors"
+
+[tasks.test]
+run = "cargo test"
+description = "Run the full test suite"
+
+[tasks.build]
+run = "cargo build --release"
+description = "Build the release binary"
+
+[tasks.fmt-check]
+run = "cargo fmt --check"
+description = "Check code formatting"
+
+# Full CI pipeline — runs lint and format in parallel, then test, then build
+[lanes.ci]
+description = "Full CI pipeline"
+steps = [
+  { parallel = ["lint", "fmt-check"] },
+  "test",
+  "build"
+]
+
+# Quick check — just lint and test, no release build
+[lanes.ci-quick]
+description = "Quick CI check (no release build)"
+steps = ["lint", "test"]

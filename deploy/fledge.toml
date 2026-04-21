@@ -1,0 +1,55 @@
+# Deploy Lane — build, push, and deploy pipeline
+#
+# Run with: fledge lane run deploy
+# Preview:  fledge lane run deploy --dry-run
+
+[tasks.test]
+run = "cargo test"
+description = "Run tests before deploying"
+
+[tasks.build]
+run = "docker build -t myapp:latest ."
+description = "Build the Docker image"
+
+[tasks.push]
+run = "docker push registry.example.com/myapp:latest"
+description = "Push image to container registry"
+
+[tasks.migrate]
+run = "sqlx migrate run"
+description = "Run database migrations"
+
+[tasks.notify]
+run = "curl -s -X POST $SLACK_WEBHOOK -d '{\"text\": \"Deploy complete\"}'"
+description = "Send Slack notification"
+
+# Full deploy pipeline — test, build, push, migrate, deploy, notify
+[lanes.deploy]
+description = "Full deploy pipeline"
+steps = [
+  "test",
+  "build",
+  "push",
+  "migrate",
+  { run = "kubectl rollout restart deployment/myapp" },
+  "notify"
+]
+
+# Deploy without migrations — for code-only changes
+[lanes.deploy-quick]
+description = "Deploy without database migrations"
+steps = [
+  "test",
+  "build",
+  "push",
+  { run = "kubectl rollout restart deployment/myapp" },
+  "notify"
+]
+
+# Rollback — revert to previous deployment
+[lanes.rollback]
+description = "Rollback to previous deployment"
+steps = [
+  { run = "kubectl rollout undo deployment/myapp" },
+  "notify"
+]
